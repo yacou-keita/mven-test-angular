@@ -1,0 +1,9 @@
+.card {
+  padding: 5rem;
+}
+
+.flex {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
