@@ -1,5 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { Client, Provider } from './interfaces/types';
+import { Fournisseur } from './modeles/fournisseur.model';
+import { ClientService } from './services/client/client.service';
+import { FournisseurService } from './services/founisseur/fournisseur.service';
 
 @Component({
   selector: 'app-root',
@@ -8,200 +12,169 @@ import { ConfirmationService, MessageService } from 'primeng/api';
   providers: [MessageService, ConfirmationService],
 })
 export class AppComponent implements OnInit {
-  title = 'web';
-  productDialog: boolean = false;
+  clientDialog: boolean = false;
+  clientDialogSubmitLabel = '';
+  clientDialogHeaderTitle = '';
+  clients: Client[] = [];
+  providers: Provider[] = [];
 
-  clients = [
-    {
-      id: 'azert',
-      name: 'yacou',
-      email: 'yacou@gmail.com',
-      phone: '444444444',
-      providers: [
-        {
-          id: '7855ss',
-          name: 'Orange',
-        },
-      ],
-    },
-    {
-      id: 'azert',
-      name: 'yacou',
-      email: 'yacou@gmail.com',
-      phone: '444444444',
-      providers: [
-        {
-          id: '7855ss',
-          name: 'Orange',
-        },
-      ],
-    },
-    {
-      id: 'azert',
-      name: 'yacou',
-      email: 'yacou@gmail.com',
-      phone: '444444444',
-      providers: [
-        {
-          id: '7855ss',
-          name: 'Orange',
-        },
-      ],
-    },
-    {
-      id: 'azert',
-      name: 'yacou',
-      email: 'yacou@gmail.com',
-      phone: '444444444',
-      providers: [
-        {
-          id: '7855ss',
-          name: 'Orange',
-        },
-      ],
-    },
-    {
-      id: 'azert',
-      name: 'yacou',
-      email: 'yacou@gmail.com',
-      phone: '444444444',
-      providers: [
-        {
-          id: '7855ss',
-          name: 'Orange',
-        },
-      ],
-    },
-    {
-      id: 'azert',
-      name: 'yacou',
-      email: 'yacou@gmail.com',
-      phone: '444444444',
-      providers: [
-        {
-          id: '7855ss',
-          name: 'Orange',
-        },
-      ],
-    },
-  ];
-
-  product: any;
-
-  selectedclients!: any;
+  client: any;
+  fourniseeur = new Fournisseur('');
 
   submitted: boolean = false;
+  submittedProvider: boolean = false;
 
   constructor(
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private clientService: ClientService,
+    private fournisseurService: FournisseurService
   ) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.runGetClients();
+    this.runGetproviders();
+  }
 
-  openNew() {
-    this.product = {};
+  runGetClients(): void {
+    this.clientService.getClients().subscribe((data) => {
+      this.clients = data.data.clients;
+    });
+  }
+
+  runGetproviders(): void {
+    this.fournisseurService.getProviders().subscribe((data) => {
+      this.providers = data.data.providers;
+    });
+  }
+
+  addClient() {
+    this.clientDialogHeaderTitle = 'Ajouter client';
+    this.clientDialogSubmitLabel = 'Ajouter';
+    this.client = {};
     this.submitted = false;
-    this.productDialog = true;
+    this.clientDialog = true;
   }
 
-  deleteSelectedclients() {
+  editClient(editingClient: any) {
+    this.clientDialogHeaderTitle = 'Modifier client';
+    this.clientDialogSubmitLabel = 'Modifier';
+    this.client = { ...editingClient };
+    this.clientDialog = true;
+  }
+
+  deleteClient(client: any) {
     this.confirmationService.confirm({
-      message: 'Are you sure you want to delete the selected clients?',
-      header: 'Confirm',
+      message: `Voulez-vraiment supprimer ${client.name} ?`,
+      header: 'Client',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.clients = this.clients.filter(
-          (val) => !this.selectedclients.includes(val)
-        );
-        this.selectedclients = null;
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Successful',
-          detail: 'clients Deleted',
-          life: 3000,
-        });
+        this.clientService
+          .deleteClientById(client._id)
+          .subscribe((clientDeleted) => {
+            if (clientDeleted.status === 'success') {
+              this.messageService.add({
+                severity: 'Client',
+                summary: 'Successful',
+                detail: `${client.name} a été supprimer`,
+                life: 3000,
+              });
+              this.runGetClients();
+            }
+          });
       },
     });
   }
 
-  editProduct(product: any) {
-    this.product = { ...product };
-    this.productDialog = true;
-  }
-
-  deleteProduct(product: any) {
+  deleteProvider(provider: any) {
     this.confirmationService.confirm({
-      message: 'Are you sure you want to delete ' + product.name + '?',
-      header: 'Confirm',
+      message: `Voulez-vraiment supprimer ${provider.name} ?`,
+      header: 'Fournisseur',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.clients = this.clients.filter((val) => val.id !== product.id);
-        this.product = {};
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Successful',
-          detail: 'Product Deleted',
-          life: 3000,
-        });
+        this.fournisseurService
+          .deleteProvidersById(provider._id)
+          .subscribe((providerDeleted) => {
+            if (providerDeleted.status === 'success') {
+              this.messageService.add({
+                severity: 'Fournisseur',
+                summary: 'Successful',
+                detail: `${provider.name} a été supprimer`,
+                life: 3000,
+              });
+              this.runGetproviders();
+            }
+          });
       },
     });
+  }
+
+  runAddProvider(provider: Fournisseur) {
+    const hasError = !provider.name;
+    if (hasError) {
+      this.submittedProvider = true;
+      return;
+    } else this.submittedProvider = false;
+    delete provider.id;
+    this.fournisseurService
+      .addProviders(provider)
+      .subscribe((providerAdded) => {
+        if (providerAdded.status === 'success') {
+          this.messageService.add({
+            severity: 'Fournisseur',
+            summary: 'Successful',
+            detail: `${provider.name} a été ajouter`,
+            life: 3000,
+          });
+          this.runGetproviders();
+          this.fourniseeur.name = '';
+        }
+      });
   }
 
   hideDialog() {
-    this.productDialog = false;
+    this.clientDialog = false;
     this.submitted = false;
   }
 
-  saveProduct() {
+  submitClientData() {
     this.submitted = true;
-
-    if (this.product.name.trim()) {
-      if (this.product.id) {
-        this.clients[this.findIndexById(this.product.id)] = this.product;
+    if (this.client._id) {
+      this.runEditCLient();
+      return;
+    }
+    this.runAddClient();
+  }
+  runAddClient() {
+    this.clientService.addClient(this.client).subscribe((clientAdded) => {
+      if (clientAdded.status === 'success') {
+        this.runGetClients();
         this.messageService.add({
-          severity: 'success',
+          severity: 'Client',
           summary: 'Successful',
-          detail: 'Product Updated',
+          detail: `${this.client.name} a été ajouter`,
           life: 3000,
         });
-      } else {
-        this.product.id = this.createId();
-        this.product.image = 'product-placeholder.svg';
-        this.clients.push(this.product);
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Successful',
-          detail: 'Product Created',
-          life: 3000,
-        });
+        this.clientDialog = false;
+        this.client = {};
       }
-
-      this.clients = [...this.clients];
-      this.productDialog = false;
-      this.product = {};
-    }
+    });
   }
-
-  findIndexById(id: string): number {
-    let index = -1;
-    for (let i = 0; i < this.clients.length; i++) {
-      if (this.clients[i].id === id) {
-        index = i;
-        break;
-      }
-    }
-
-    return index;
-  }
-
-  createId(): string {
-    let id = '';
-    var chars =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (var i = 0; i < 5; i++) {
-      id += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return id;
+  runEditCLient() {
+    this.clientService
+      .updateClientById(this.client)
+      .subscribe((clientUpdated) => {
+        if (clientUpdated.status === 'success') {
+          this.runGetClients();
+          this.messageService.add({
+            severity: 'Client',
+            summary: 'Successful',
+            detail: `${this.client.name} a été modifier`,
+            life: 3000,
+          });
+          this.clientDialog = false;
+          this.client = {};
+        }
+      });
   }
 }
